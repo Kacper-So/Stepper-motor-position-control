@@ -9,7 +9,7 @@
 #define STP       1
 
 AS5600 encoder;   //  use default Wire
-
+float position;
 
 void setup()
 {
@@ -35,13 +35,12 @@ void loop()
   //  update every 100 ms
   if (millis() - lastTime >= 100){
     lastTime = millis();
-    Serial.print(encoder.getCumulativePosition());
-    Serial.print("\t");
-    Serial.println(encoder.getRevolutions());
+    position = ((float)encoder.readAngle()/4096.f) * 360.f;
+    Serial.println(position);
   }
 
   //  just to show how reset can be used
-  if (encoder.getRevolutions() >= 10){
+  if (encoder.getRevolutions() >= 1){
     encoder.resetPosition();
   }
 }
