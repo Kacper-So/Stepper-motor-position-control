@@ -37,7 +37,7 @@ void setup(){
   Serial.begin(9600);
   if(!encoder.begin(DIR)){
     for(;;){
-      Serial.println("ENCODER NOT FOUND, RST");
+      //Serial.println("ENCODER NOT FOUND, RST");
       delay(1000);
     }
   }
@@ -51,7 +51,7 @@ void loop(){
   if (Serial.available()){
     uart_data = Serial.readStringUntil('\n');
     if (!(atoi(uart_data.c_str()) >= 0 && atoi(uart_data.c_str()) < 360)){
-      Serial.println("WRONG");
+      //Serial.println("WRONG");
     } else { 
       set_position = atoi(uart_data.c_str());
     }
@@ -63,7 +63,11 @@ void loop(){
   if (millis() - lastTime >= 10){
     lastTime = millis();
     curr_position = ((float)encoder.readAngle()/4096.f) * 360.f;
-    Serial.println(curr_position);
+    char stepper_angle[30];
+    dtostrf(curr_position, 10, 10, stepper_angle);
+    char text[32];
+    snprintf(text, 32, "%s", stepper_angle);
+    Serial.println(text);
     if(curr_position > set_position){
       errorDIR1 = 360 - curr_position + set_position;
     } else { 
