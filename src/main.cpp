@@ -15,7 +15,7 @@
 #define STEP_MULTIPLIER_5 0.0625
 #define STEP_MULTIPLIER_6 0.03125
 
-AS5600 encoder;   //  use default Wire
+AS5600 encoder;
 float curr_position;
 float set_position = 0;
 float errorDIR1;
@@ -37,7 +37,7 @@ void setup(){
   Serial.begin(9600);
   if(!encoder.begin(DIR)){
     for(;;){
-      //Serial.println("ENCODER NOT FOUND, RST");
+      Serial.println("ENCODER NOT FOUND, RST");
       delay(1000);
     }
   }
@@ -48,26 +48,38 @@ void setup(){
 void loop(){
   static uint32_t lastTime = 0;
   static uint32_t lastTime2 = 0;
+
+  //Wczytywanie pozycji zadanej z uart
   if (Serial.available()){
     uart_data = Serial.readStringUntil('\n');
     if (!(atoi(uart_data.c_str()) >= 0 && atoi(uart_data.c_str()) < 360)){
-      //Serial.println("WRONG");
+      Serial.println("WRONG");
     } else { 
       set_position = atoi(uart_data.c_str());
     }
   }
+
+  //Losowanie pozycji zadanej co 5 sekund
   if (millis() - lastTime2 >= 5000){
     lastTime2 = millis();
     set_position = random(360);
   }
+
+
   if (millis() - lastTime >= 10){
     lastTime = millis();
+
+    //Pomiar pozycji
     curr_position = ((float)encoder.readAngle()/4096.f) * 360.f;
+
+    //Wysłanie aktualnej pozycji do Telemetry Viewer
     char stepper_angle[30];
     dtostrf(curr_position, 10, 10, stepper_angle);
     char text[32];
     snprintf(text, 32, "%s", stepper_angle);
     Serial.println(text);
+
+    //Wyznaczenie uchybu oraz determinacja kierunku obrotu
     if(curr_position > set_position){
       errorDIR1 = 360 - curr_position + set_position;
     } else { 
@@ -81,6 +93,8 @@ void loop(){
       error = errorDIR2;
       digitalWrite(DIR, LOW);
     }
+
+    //Wyznaczenie wielkości kroku
     if (error > STEP_ANGLE * STEP_MULTIPLIER_1){
       digitalWrite(M0, LOW);
       digitalWrite(M1, LOW);
@@ -130,6 +144,8 @@ void loop(){
       digitalWrite(STP, LOW);
       delayMicroseconds(1000);
     }
+
+    //Reset pozycji po pełnym obrocie
     if (encoder.getRevolutions() >= 1){
       encoder.resetPosition();
     }
